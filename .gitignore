@@ -5,6 +5,7 @@ __pycache__/
 
 test_evadb
 evadb_data
+.*
 # C extensions
 *.so
 
