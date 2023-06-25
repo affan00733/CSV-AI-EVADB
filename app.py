@@ -1,3 +1,4 @@
+import os 
 import evadb
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
@@ -5,8 +6,8 @@ from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
 from langchain.document_loaders import DataFrameLoader
 from langchain.text_splitter import CharacterTextSplitter
-import os
 from dotenv.main import load_dotenv
+
 load_dotenv()
 
 if os.path.exists(".env") and os.environ.get("OPENAI_API_KEY") is not None:
@@ -20,7 +21,7 @@ cursor.drop_table("MyCSV").execute()
 cursor.load(file_regex="./fishfry-locations.csv",
             format="document", table_name="MyCSV").execute()
 df = cursor.table("MyCSV").df()
-print(df)
+
 cursor.drop_udf("embedding").execute()
 embedding_udf = cursor.create_udf(
     udf_name="embedding",
@@ -29,7 +30,14 @@ embedding_udf = cursor.create_udf(
 )
 embedding_udf.execute()
 
-loader = DataFrameLoader(df, page_content_column="combined")
+# cursor.create_vector_index(
+#         "faiss_index",
+#         table_name="MyCSV",
+#         expr="embedding(data)",
+#         using="QDRANT"
+#     ).exeute()
+
+loader = DataFrameLoader(df, page_content_column="mycsv.data")
 data = loader.load()
 text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 docs = text_splitter.split_documents(data)
