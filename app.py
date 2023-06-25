@@ -1,5 +1,4 @@
 import evadb
-from evadb.interfaces.relational.db import connect
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chat_models import ChatOpenAI
@@ -16,33 +15,12 @@ else:
     user_api_key = "API_KEY"
 os.environ["OPENAI_API_KEY"] = user_api_key
 
-conn = connect()
-cursor = conn.cursor()
+cursor = evadb.connect().cursor()
 cursor.drop_table("MyCSV").execute()
-create_table_query = f"""
-    CREATE TABLE IF NOT EXISTS MyCSV(
-        venue_name TEXT(30),
-        venue_type TEXT(30),
-        venue_address TEXT(30),
-        website TEXT(30),
-        menu_url TEXT(30),
-        menu_text TEXT(30),
-        phone TEXT(30),
-        email TEXT(30),
-        alcohol TEXT(30),
-        lunch TEXT(30)
-    );
-    """
-cursor.query(create_table_query).df()
 cursor.load(file_regex="./fishfry-locations.csv",
-            format="csv", table_name="MyCSV").execute()
-
+            format="document", table_name="MyCSV").execute()
 df = cursor.table("MyCSV").df()
-df['combined'] = df[df.columns[1:]].apply(
-    lambda x: ','.join(x.dropna().astype(str)),
-    axis=1
-)
-
+print(df)
 cursor.drop_udf("embedding").execute()
 embedding_udf = cursor.create_udf(
     udf_name="embedding",
